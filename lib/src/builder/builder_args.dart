@@ -45,3 +45,24 @@ class AppleBuilderArgs extends BuilderArgs {
     this.enableStrictTryCompile = false,
   });
 }
+
+class EmscriptenBuilderArgs extends BuilderArgs {
+  /// Path to the Emscripten CMake toolchain file.
+  ///
+  /// Typically: $EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
+  final String? toolchainFile;
+
+  /// Additional Emscripten-specific CMake flags
+  final Map<String, String> emscriptenFlags;
+
+  /// WebAssembly output format options
+  final bool generateJs;
+  final bool generateHtml;
+
+  const EmscriptenBuilderArgs({
+    this.toolchainFile,
+    this.emscriptenFlags = const {},
+    this.generateJs = true,
+    this.generateHtml = false,
+  });
+}

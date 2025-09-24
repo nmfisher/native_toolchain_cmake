@@ -1,0 +1,17 @@
+name: emscripten_example
+version: 0.1.0
+description: Example WebAssembly build using Emscripten with native_toolchain_cmake
+
+environment:
+  sdk: ^3.0.0
+
+dependencies:
+  code_assets: ^0.19.5
+  hooks: ^0.20.0
+  native_toolchain_cmake:
+    path: ../../
+
+dev_dependencies:
+
+hooks:
+  build: hook/build.dart

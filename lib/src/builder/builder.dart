@@ -62,6 +62,9 @@ class CMakeBuilder implements Builder {
   // android ndk
   final AndroidBuilderArgs androidArgs;
 
+  // emscripten
+  final EmscriptenBuilderArgs emscriptenArgs;
+
   final Logger? logger;
 
   /// log level of CMake
@@ -107,6 +110,7 @@ class CMakeBuilder implements Builder {
     this.buildLocal = false,
     this.androidArgs = const AndroidBuilderArgs(),
     this.appleArgs = const AppleBuilderArgs(),
+    this.emscriptenArgs = const EmscriptenBuilderArgs(),
     this.useVcvars = true,
   }) : cmakeListsDir = sourceDir;
 
@@ -157,6 +161,7 @@ class CMakeBuilder implements Builder {
     this.buildLocal = false,
     this.androidArgs = const AndroidBuilderArgs(),
     this.appleArgs = const AppleBuilderArgs(),
+    this.emscriptenArgs = const EmscriptenBuilderArgs(),
     this.useVcvars = true,
   }) : cmakeListsDir = sourceDir {
     // Some platforms will error if directory does not exist, create it.
@@ -230,6 +235,7 @@ class CMakeBuilder implements Builder {
       targets: targets,
       appleArgs: appleArgs,
       androidArgs: androidArgs,
+      emscriptenArgs: emscriptenArgs,
       logLevel: logLevel,
     );
 

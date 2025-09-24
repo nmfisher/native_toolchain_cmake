@@ -52,6 +52,9 @@ class RunCMakeBuilder {
   // android ndk
   final AndroidBuilderArgs androidArgs;
 
+  // emscripten
+  final EmscriptenBuilderArgs emscriptenArgs;
+
   /// log level of CMake
   final LogLevel logLevel;
 
@@ -68,6 +71,7 @@ class RunCMakeBuilder {
     this.targets,
     this.androidArgs = const AndroidBuilderArgs(),
     this.appleArgs = const AppleBuilderArgs(),
+    this.emscriptenArgs = const EmscriptenBuilderArgs(),
     this.logLevel = LogLevel.STATUS,
   }) : outDir = outputDir ?? input.outputDirectory;
 
@@ -128,14 +132,19 @@ class RunCMakeBuilder {
   }
 
   Future<RunProcessResult> _generate({Map<String, String>? environment}) async {
-    final defs = switch (codeConfig.targetOS) {
-      OS.windows => await _generateWindowsDefines(),
-      OS.linux => await _generateLinuxDefines(),
-      OS.macOS => await _generateMacosDefines(),
-      OS.iOS => await _generateIOSDefines(),
-      OS.android => await _generateAndroidDefines(),
-      _ => throw UnimplementedError('Unsupported OS: ${codeConfig.targetOS}'),
-    };
+    // Check for WebAssembly builds first (based on EmscriptenBuilderArgs)
+    final isWebAssembly = emscriptenArgs.toolchainFile != null;
+
+    final defs = isWebAssembly
+      ? await _generateEmscriptenDefines()
+      : switch (codeConfig.targetOS) {
+          OS.windows => await _generateWindowsDefines(),
+          OS.linux => await _generateLinuxDefines(),
+          OS.macOS => await _generateMacosDefines(),
+          OS.iOS => await _generateIOSDefines(),
+          OS.android => await _generateAndroidDefines(),
+          _ => throw UnimplementedError('Unsupported OS: ${codeConfig.targetOS}'),
+        };
     final _defines = <String>[
       '-DCMAKE_BUILD_TYPE=${buildMode.name.toCapitalCase()}',
       if (buildMode == BuildMode.debug) '-DCMAKE_C_FLAGS_DEBUG=-DDEBUG',
@@ -281,6 +290,33 @@ class RunCMakeBuilder {
     defs.add('-DCMAKE_SYSTEM_NAME=Linux');
     final toolchain = await linuxToolchainCmake();
     defs.add('-DCMAKE_TOOLCHAIN_FILE=${toolchain.normalizePath().toFilePath()}');
+    return defs;
+  }
+
+  Future<List<String>> _generateEmscriptenDefines() async {
+    // This function is only called for WebAssembly builds (detected by EmscriptenBuilderArgs)
+    // No need to check OS since OS.web doesn't exist
+    final defs = <String>[];
+
+    // Require toolchain file
+    if (emscriptenArgs.toolchainFile == null) {
+      throw Exception(
+        'EmscriptenBuilderArgs.toolchainFile must be set for WebAssembly builds. '
+        'Typically: \$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake'
+      );
+    }
+
+    defs.add('-DCMAKE_TOOLCHAIN_FILE=${emscriptenArgs.toolchainFile}');
+    defs.add('-DCMAKE_SYSTEM_NAME=Emscripten');
+
+    // Add Emscripten-specific flags
+    emscriptenArgs.emscriptenFlags.forEach((key, value) {
+      defs.add('-D$key=$value');
+    });
+
+    // Note: EMSCRIPTEN_GENERATE_BITCODE_STATIC_LIBRARIES is deprecated and removed
+    // Modern Emscripten handles JS generation automatically based on output type
+
     return defs;
   }
 

@@ -109,7 +109,7 @@ extension BuildOutputBuilderCodeAssets on BuildOutputBuilder {
       for (final MapEntry(:key, value: assetName) in names.entries) {
         final found = regExp
             ? RegExp(key).hasMatch(p.basename(entity.path))
-            : entity.path.endsWith(input.config.code.targetOS.libraryFileName(key, linkMode));
+            : _fileMatchesExpectedName(entity.path, input.config.code, key, linkMode);
         if (!found) continue;
         logger?.info('Found library file: ${entity.path}');
         final asset = CodeAsset(
@@ -146,4 +146,20 @@ extension BuildOutputBuilderCodeAssets on BuildOutputBuilder {
     }
     return addedAssets;
   }
+}
+
+bool _fileMatchesExpectedName(String filePath, CodeConfig config, String name, LinkMode linkMode) {
+  // Check for WebAssembly files first (since OS.web doesn't exist, we detect by file extension)
+  if (filePath.endsWith('$name.wasm')) {
+    return true;
+  }
+
+  // Check for standard native library files
+  return filePath.endsWith(config.targetOS.libraryFileName(name, linkMode));
+}
+
+String _getExpectedFileName(CodeConfig config, String name, LinkMode linkMode) {
+  // This function is kept for backwards compatibility but is no longer used
+  // in the main search logic since we use _fileMatchesExpectedName instead
+  return config.targetOS.libraryFileName(name, linkMode);
 }
